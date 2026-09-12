@@ -28,7 +28,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body className="min-h-full flex flex-col">
         <AuthSessionProvider>
           <header className="flex items-center justify-between border-b px-6 py-4">
-            <span className="font-semibold">Frame Me</span>
+            <span className="flex items-center gap-2 font-semibold">
+              <span className="size-6 rounded-md bg-gradient-to-br from-primary to-accent-foreground" />
+              Frame Me
+            </span>
             <AuthButton />
           </header>
           {children}

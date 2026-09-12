@@ -62,6 +62,30 @@ export async function getDriveFolder(
   return file;
 }
 
+/**
+ * Downloads a file's actual bytes via the Drive API's media endpoint.
+ * Unlike thumbnailLink (lh3.googleusercontent.com), this googleapis.com
+ * endpoint supports CORS for Bearer-token fetch() calls from the browser.
+ */
+export async function getDriveFileMedia(
+  accessToken: string,
+  fileId: string,
+): Promise<Blob> {
+  const url = new URL(`${DRIVE_FILES_ENDPOINT}/${fileId}`);
+  url.searchParams.set("alt", "media");
+  url.searchParams.set("supportsAllDrives", "true");
+
+  const res = await fetch(url.toString(), {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+
+  if (!res.ok) {
+    throw new DriveApiError(`Drive API error (${res.status})`, res.status);
+  }
+
+  return res.blob();
+}
+
 /** Lists every direct child (file or folder) of a Drive folder, paginating as needed. */
 export async function listFolderChildren(
   accessToken: string,
