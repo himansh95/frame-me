@@ -1,36 +1,39 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useSelfieStore } from "@/stores/selfie-store";
 import { getFaceDescriptor, FaceDetectionError } from "@/lib/face/descriptor";
-
-function loadImage(url: string): Promise<HTMLImageElement> {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.onload = () => resolve(img);
-    img.onerror = () => reject(new Error("Couldn't read that image file."));
-    img.src = url;
-  });
-}
+import { decodePhotoFile } from "@/lib/image-decode";
 
 export function SelfieUpload() {
   const { status, previewUrl, error, start, succeed, fail, reset } =
     useSelfieStore();
   const inputRef = useRef<HTMLInputElement>(null);
+  const [decoding, setDecoding] = useState(false);
 
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     e.target.value = ""; // allow re-selecting the same file
     if (!file) return;
 
-    const url = URL.createObjectURL(file);
-    start(url);
+    setDecoding(true);
     try {
-      const image = await loadImage(url);
-      const descriptor = await getFaceDescriptor(image);
+      // Decode once via createImageBitmap, then derive both a small (fast
+      // to render) preview and a modestly-sized canvas for analysis -
+      // rather than letting a multi-MP source photo decode twice (once for
+      // display, once for detection) and stall the preview for seconds.
+      const { previewUrl: url, analysisCanvas } = await decodePhotoFile(file);
+      setDecoding(false);
+      start(url);
+      // Promise microtask chains (awaits) don't force the browser to
+      // paint - only an actual macrotask boundary does. Yield here so the
+      // preview image renders before face-api's heavy CPU/GPU work starts.
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      const descriptor = await getFaceDescriptor(analysisCanvas);
       succeed(descriptor);
     } catch (err) {
+      setDecoding(false);
       fail(
         err instanceof FaceDetectionError
           ? err.message
@@ -59,12 +62,15 @@ export function SelfieUpload() {
         />
       )}
 
-      {status === "idle" && (
+      {status === "idle" && !decoding && (
         <Button onClick={() => inputRef.current?.click()}>
           Upload a selfie
         </Button>
       )}
-      {status === "loading" && (
+      {decoding && (
+        <p className="text-sm text-muted-foreground">Loading photo...</p>
+      )}
+      {status === "loading" && !decoding && (
         <p className="text-sm text-muted-foreground">Analyzing selfie...</p>
       )}
       {status === "done" && (

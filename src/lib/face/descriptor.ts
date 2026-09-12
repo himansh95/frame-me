@@ -13,13 +13,18 @@ export class FaceDetectionError extends Error {
 
 /** Detects the single face in an image and returns its 128-d descriptor. */
 export async function getFaceDescriptor(
-  image: HTMLImageElement,
+  image: HTMLImageElement | HTMLCanvasElement,
 ): Promise<Float32Array> {
   await loadFaceModels();
   const faceapi = await import("face-api.js");
 
+  // Larger inputSize + lower scoreThreshold than the defaults so smaller
+  // faces (e.g. in a group photo) are still picked up.
   const detections = await faceapi
-    .detectAllFaces(image, new faceapi.TinyFaceDetectorOptions())
+    .detectAllFaces(
+      image,
+      new faceapi.TinyFaceDetectorOptions({ inputSize: 608, scoreThreshold: 0.3 }),
+    )
     .withFaceLandmarks()
     .withFaceDescriptors();
 
