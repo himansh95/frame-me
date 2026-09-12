@@ -1,6 +1,7 @@
 "use client";
 
 import { useSession } from "next-auth/react";
+import { FaceMatchRunner } from "@/components/face-match-runner";
 import { FolderPicker } from "@/components/folder-picker";
 import { PhotoGrid } from "@/components/photo-grid";
 import { SelfieUpload } from "@/components/selfie-upload";
@@ -20,6 +21,7 @@ export default function Home() {
           <>
             <SelfieUpload />
             <FolderPicker />
+            <FaceMatchRunner />
             <PhotoGrid images={images} />
           </>
         ) : (
