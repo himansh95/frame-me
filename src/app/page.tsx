@@ -3,6 +3,7 @@
 import { useSession } from "next-auth/react";
 import { FolderPicker } from "@/components/folder-picker";
 import { PhotoGrid } from "@/components/photo-grid";
+import { SelfieUpload } from "@/components/selfie-upload";
 import { useScanStore } from "@/stores/scan-store";
 
 export default function Home() {
@@ -17,6 +18,7 @@ export default function Home() {
         </h1>
         {status === "authenticated" ? (
           <>
+            <SelfieUpload />
             <FolderPicker />
             <PhotoGrid images={images} />
           </>
