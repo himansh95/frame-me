@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { parseDriveFolderId } from "@/lib/drive/folder-url";
 import { getDriveFolder, DriveApiError, type DriveFile } from "@/lib/drive/api";
+import { FolderScanner } from "@/components/folder-scanner";
 
 export function FolderPicker() {
   const { data: session } = useSession();
@@ -57,9 +58,12 @@ export function FolderPicker() {
         <p className="text-sm text-red-600">{error}</p>
       )}
       {status === "success" && folder && (
-        <p className="text-sm text-muted-foreground">
-          Found folder: <span className="font-medium">{folder.name}</span>
-        </p>
+        <>
+          <p className="text-sm text-muted-foreground">
+            Found folder: <span className="font-medium">{folder.name}</span>
+          </p>
+          <FolderScanner folder={folder} />
+        </>
       )}
     </form>
   );

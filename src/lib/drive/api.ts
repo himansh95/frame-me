@@ -1,5 +1,5 @@
 const DRIVE_FILES_ENDPOINT = "https://www.googleapis.com/drive/v3/files";
-const FOLDER_MIME_TYPE = "application/vnd.google-apps.folder";
+export const FOLDER_MIME_TYPE = "application/vnd.google-apps.folder";
 
 export class DriveApiError extends Error {
   constructor(
@@ -15,6 +15,7 @@ export interface DriveFile {
   id: string;
   name: string;
   mimeType: string;
+  thumbnailLink?: string;
 }
 
 /** Fetches basic metadata for a Drive file/folder by ID. */
@@ -59,4 +60,41 @@ export async function getDriveFolder(
     throw new DriveApiError(`"${file.name}" is not a folder.`, 400);
   }
   return file;
+}
+
+/** Lists every direct child (file or folder) of a Drive folder, paginating as needed. */
+export async function listFolderChildren(
+  accessToken: string,
+  folderId: string,
+): Promise<DriveFile[]> {
+  const children: DriveFile[] = [];
+  let pageToken: string | undefined;
+
+  do {
+    const url = new URL(DRIVE_FILES_ENDPOINT);
+    url.searchParams.set("q", `'${folderId}' in parents and trashed = false`);
+    url.searchParams.set(
+      "fields",
+      "nextPageToken,files(id,name,mimeType,thumbnailLink)",
+    );
+    url.searchParams.set("pageSize", "1000");
+    url.searchParams.set("supportsAllDrives", "true");
+    url.searchParams.set("includeItemsFromAllDrives", "true");
+    if (pageToken) url.searchParams.set("pageToken", pageToken);
+
+    const res = await fetch(url.toString(), {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+
+    if (!res.ok) {
+      throw new DriveApiError(`Drive API error (${res.status})`, res.status);
+    }
+
+    const data: { files: DriveFile[]; nextPageToken?: string } =
+      await res.json();
+    children.push(...data.files);
+    pageToken = data.nextPageToken;
+  } while (pageToken);
+
+  return children;
 }
