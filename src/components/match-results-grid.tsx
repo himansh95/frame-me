@@ -1,7 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { Check, X } from "lucide-react";
 import { PhotoThumbnail } from "@/components/photo-thumbnail";
+import { cn } from "@/lib/utils";
 import type { MatchResult } from "@/lib/face/match";
 
 /**
@@ -33,10 +35,11 @@ export function MatchResultsGrid({ results }: { results: MatchResult[] }) {
   }
 
   return (
-    <div className="flex w-full max-w-5xl flex-col items-center gap-4">
+    <div className="flex w-full flex-col gap-3 pt-1">
       <p className="text-sm text-muted-foreground">
-        {keptCount} of {candidates.length} candidates kept - click a photo to
-        toggle it if it isn&apos;t you.
+        <span className="font-medium text-foreground">{keptCount}</span> of{" "}
+        {candidates.length} candidates kept - click a photo to toggle it if
+        it isn&apos;t you.
       </p>
       <div className="grid w-full grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
         {candidates.map((r) => {
@@ -46,14 +49,28 @@ export function MatchResultsGrid({ results }: { results: MatchResult[] }) {
               key={r.image.id}
               type="button"
               onClick={() => toggle(r.image.id)}
-              className={`relative text-left ${isRejected ? "opacity-40" : ""}`}
+              className={cn(
+                "group relative overflow-hidden rounded-lg text-left ring-1 ring-foreground/10 transition-all hover:ring-primary/60",
+                isRejected && "opacity-45",
+              )}
             >
               <PhotoThumbnail image={r.image} />
-              <span className="absolute left-1 top-1 rounded bg-black/70 px-1.5 py-0.5 text-[10px] text-white">
-                {r.distance?.toFixed(3)}
-              </span>
-              <span className="absolute right-1 top-1 rounded bg-black/70 px-1.5 py-0.5 text-[10px] text-white">
-                {isRejected ? "Not me" : "Keep"}
+              <span className="pointer-events-none absolute inset-x-0 bottom-0 flex items-center justify-between bg-gradient-to-t from-black/70 to-transparent px-1.5 py-1.5 text-white">
+                <span className="text-[10px] tabular-nums opacity-80">
+                  {r.distance?.toFixed(3)}
+                </span>
+                <span
+                  className={cn(
+                    "flex size-5 items-center justify-center rounded-full",
+                    isRejected ? "bg-white/20" : "bg-primary",
+                  )}
+                >
+                  {isRejected ? (
+                    <X className="size-3" />
+                  ) : (
+                    <Check className="size-3" />
+                  )}
+                </span>
               </span>
             </button>
           );

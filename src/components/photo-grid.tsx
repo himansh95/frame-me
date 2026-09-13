@@ -15,10 +15,12 @@ export function PhotoGrid({ images }: { images: ScannedImage[] }) {
   const visible = images.slice(0, visibleCount);
 
   return (
-    <div className="flex w-full max-w-5xl flex-col items-center gap-4">
+    <div className="flex w-full flex-col items-center gap-4">
       <div className="grid w-full grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
         {visible.map((image) => (
-          <PhotoThumbnail key={image.id} image={image} />
+          <div key={image.id} className="group">
+            <PhotoThumbnail image={image} />
+          </div>
         ))}
       </div>
       {visibleCount < images.length && (

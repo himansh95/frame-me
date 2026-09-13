@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { createLimiter } from "@/lib/concurrency";
+import { cn } from "@/lib/utils";
 import type { ScannedImage } from "@/lib/drive/scan";
 
 // Shared across every thumbnail on the page so we never have more than a
@@ -72,7 +73,7 @@ export function PhotoThumbnail({ image }: { image: ScannedImage }) {
   return (
     <figure
       ref={elementRef}
-      className="flex flex-col gap-1 overflow-hidden rounded-md border"
+      className="flex flex-col gap-1 overflow-hidden rounded-lg ring-1 ring-foreground/10"
       title={`${image.path}/${image.name}`}
     >
       {src ? (
@@ -80,11 +81,16 @@ export function PhotoThumbnail({ image }: { image: ScannedImage }) {
         <img
           src={src}
           alt={image.name}
-          className="aspect-square w-full bg-zinc-100 object-cover dark:bg-zinc-900"
+          className="aspect-square w-full bg-zinc-100 object-cover transition-transform duration-200 group-hover:scale-105 dark:bg-zinc-900"
         />
       ) : (
-        <div className="flex aspect-square w-full items-center justify-center bg-zinc-100 p-2 text-center text-xs text-muted-foreground dark:bg-zinc-900">
-          {failed ? image.name : visible ? "Loading..." : ""}
+        <div
+          className={cn(
+            "flex aspect-square w-full items-center justify-center bg-muted p-2 text-center text-xs text-muted-foreground",
+            visible && !failed && "animate-pulse",
+          )}
+        >
+          {failed ? image.name : ""}
         </div>
       )}
     </figure>

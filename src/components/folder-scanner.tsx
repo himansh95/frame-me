@@ -1,7 +1,9 @@
 "use client";
 
 import { useSession } from "next-auth/react";
+import { ScanSearch } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
 import { scanDriveFolderTree } from "@/lib/drive/scan";
 import { useScanStore } from "@/stores/scan-store";
 import type { DriveFile } from "@/lib/drive/api";
@@ -28,16 +30,20 @@ export function FolderScanner({ folder }: { folder: DriveFile }) {
   }
 
   return (
-    <div className="flex w-full flex-col items-center gap-2">
+    <div className="flex w-full flex-col items-start gap-2">
       <Button onClick={handleScan} disabled={status === "scanning"}>
+        <ScanSearch className="size-3.5" />
         {status === "scanning" ? "Scanning..." : "Scan for photos"}
       </Button>
       {status === "scanning" && (
-        <p className="text-sm text-muted-foreground">
-          Scanned {progress.foldersScanned} subfolder
-          {progress.foldersScanned === 1 ? "" : "s"} · found{" "}
-          {progress.photosFound} photo{progress.photosFound === 1 ? "" : "s"}
-        </p>
+        <div className="flex w-full flex-col gap-1.5">
+          <Progress value={null} className="w-full" />
+          <p className="text-sm text-muted-foreground">
+            Scanned {progress.foldersScanned} subfolder
+            {progress.foldersScanned === 1 ? "" : "s"} · found{" "}
+            {progress.photosFound} photo{progress.photosFound === 1 ? "" : "s"}
+          </p>
+        </div>
       )}
       {status === "done" && (
         <p className="text-sm text-muted-foreground">

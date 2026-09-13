@@ -1,7 +1,9 @@
 "use client";
 
 import { useSession } from "next-auth/react";
+import { Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
 import { MatchResultsGrid } from "@/components/match-results-grid";
 import { matchPhotosToDescriptor } from "@/lib/face/match";
 import { useMatchStore } from "@/stores/match-store";
@@ -16,7 +18,6 @@ export function FaceMatchRunner() {
     useMatchStore();
 
   const canRun = !!session?.accessToken && !!selfieDescriptor && images.length > 0;
-  if (!canRun && status === "idle") return null;
 
   async function handleRun() {
     if (!session?.accessToken || !selfieDescriptor) return;
@@ -44,15 +45,28 @@ export function FaceMatchRunner() {
   }
 
   return (
-    <div className="flex w-full flex-col items-center gap-4">
+    <div className="flex w-full flex-col items-start gap-3">
       <Button onClick={handleRun} disabled={!canRun || status === "running"}>
+        <Sparkles className="size-3.5" />
         {status === "running" ? "Finding your photos..." : "Find my photos"}
       </Button>
-      {status === "running" && (
+      {!canRun && status === "idle" && (
         <p className="text-sm text-muted-foreground">
-          Processed {progress.processed}/{progress.total} · matched{" "}
-          {progress.matched}
+          Finish steps 1 and 2 first.
         </p>
+      )}
+      {status === "running" && (
+        <div className="flex w-full flex-col gap-1.5">
+          <Progress
+            value={progress.total ? progress.processed : null}
+            max={progress.total || undefined}
+            className="w-full"
+          />
+          <p className="text-sm text-muted-foreground">
+            Processed {progress.processed}/{progress.total} · matched{" "}
+            {progress.matched}
+          </p>
+        </div>
       )}
       {status === "error" && error && (
         <p className="text-sm text-red-600">{error}</p>

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useSession } from "next-auth/react";
+import { FolderSearch } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { parseDriveFolderId } from "@/lib/drive/folder-url";
@@ -43,7 +44,7 @@ export function FolderPicker() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex w-full max-w-md flex-col gap-3">
+    <form onSubmit={handleSubmit} className="flex w-full flex-col gap-3">
       <div className="flex gap-2">
         <Input
           value={link}
@@ -51,7 +52,14 @@ export function FolderPicker() {
           placeholder="Paste the shared Google Drive folder link"
         />
         <Button type="submit" disabled={status === "loading" || !link}>
-          {status === "loading" ? "Checking..." : "Find folder"}
+          {status === "loading" ? (
+            "Checking..."
+          ) : (
+            <>
+              <FolderSearch className="size-3.5" />
+              Find folder
+            </>
+          )}
         </Button>
       </div>
       {status === "error" && error && (
@@ -60,7 +68,7 @@ export function FolderPicker() {
       {status === "success" && folder && (
         <>
           <p className="text-sm text-muted-foreground">
-            Found folder: <span className="font-medium">{folder.name}</span>
+            Found folder: <span className="font-medium text-foreground">{folder.name}</span>
           </p>
           <FolderScanner folder={folder} />
         </>

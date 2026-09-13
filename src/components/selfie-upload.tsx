@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { Camera, Loader2, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useSelfieStore } from "@/stores/selfie-store";
 import { getFaceDescriptor, FaceDetectionError } from "@/lib/face/descriptor";
@@ -43,7 +44,7 @@ export function SelfieUpload() {
   }
 
   return (
-    <div className="flex w-full max-w-md flex-col items-center gap-3">
+    <div className="flex w-full flex-col items-center gap-3">
       <input
         ref={inputRef}
         type="file"
@@ -53,19 +54,33 @@ export function SelfieUpload() {
         onChange={handleFileChange}
       />
 
-      {previewUrl && (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={previewUrl}
-          alt="Your selfie"
-          className="size-32 rounded-full border object-cover"
-        />
-      )}
+      <button
+        type="button"
+        onClick={() => inputRef.current?.click()}
+        className="group relative flex size-28 items-center justify-center overflow-hidden rounded-full border-2 border-dashed border-border bg-muted transition-colors hover:border-primary/60 disabled:pointer-events-none"
+        disabled={decoding || status === "loading"}
+      >
+        {previewUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={previewUrl}
+            alt="Your selfie"
+            className="size-full object-cover"
+          />
+        ) : (
+          <Camera className="size-7 text-muted-foreground transition-colors group-hover:text-primary" />
+        )}
+        {(decoding || status === "loading") && (
+          <span className="absolute inset-0 flex items-center justify-center bg-background/70">
+            <Loader2 className="size-6 animate-spin text-primary" />
+          </span>
+        )}
+      </button>
 
       {status === "idle" && !decoding && (
-        <Button onClick={() => inputRef.current?.click()}>
-          Upload a selfie
-        </Button>
+        <p className="text-sm text-muted-foreground">
+          Click the circle to upload a selfie
+        </p>
       )}
       {decoding && (
         <p className="text-sm text-muted-foreground">Loading photo...</p>
@@ -75,8 +90,13 @@ export function SelfieUpload() {
       )}
       {status === "done" && (
         <div className="flex flex-col items-center gap-2">
-          <p className="text-sm text-muted-foreground">Face detected ✓</p>
-          <Button variant="outline" onClick={() => inputRef.current?.click()}>
+          <p className="text-sm font-medium text-primary">Face detected ✓</p>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => inputRef.current?.click()}
+          >
+            <RotateCcw className="size-3.5" />
             Use a different photo
           </Button>
         </div>
@@ -86,11 +106,13 @@ export function SelfieUpload() {
           {error && <p className="text-sm text-red-600">{error}</p>}
           <Button
             variant="outline"
+            size="sm"
             onClick={() => {
               reset();
               inputRef.current?.click();
             }}
           >
+            <RotateCcw className="size-3.5" />
             Try another photo
           </Button>
         </div>
