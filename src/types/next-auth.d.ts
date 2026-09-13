@@ -4,6 +4,7 @@ declare module "next-auth" {
   interface Session extends DefaultSession {
     accessToken?: string;
     accessTokenExpiresAt?: number;
+    error?: "RefreshAccessTokenError";
   }
 }
 
@@ -12,5 +13,6 @@ declare module "@auth/core/jwt" {
     accessToken?: string;
     refreshToken?: string;
     accessTokenExpiresAt?: number;
+    error?: "RefreshAccessTokenError";
   }
 }

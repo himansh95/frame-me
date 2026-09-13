@@ -1,6 +1,8 @@
 import { get, set } from "idb-keyval";
 
-const CACHE_KEY_PREFIX = "frame-me:photo-faces:";
+// Bump this whenever analysis resolution/detector settings change, so stale
+// descriptors computed under old settings aren't reused.
+const CACHE_KEY_PREFIX = "frame-me:photo-faces:v2:";
 
 /** Face descriptors previously detected in a Drive photo, keyed by file ID -
  * independent of which selfie is being matched against. */

@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { getDriveFileMedia } from "@/lib/drive/api";
 import { createLimiter } from "@/lib/concurrency";
 import type { ScannedImage } from "@/lib/drive/scan";
 
@@ -12,17 +11,12 @@ const limitFetch = createLimiter(10);
 
 /**
  * thumbnailLink (lh3.googleusercontent.com) doesn't support CORS for
- * Authorization-header fetches, so pull the actual image bytes via the
- * Drive API's media endpoint instead and render as a blob URL. Only starts
- * downloading once the thumbnail scrolls near the viewport.
+ * Authorization-header fetches, and is a short-lived signed URL that can go
+ * stale - so fetch via our own proxy route (server-side, refreshes a stale
+ * link automatically) and render as a blob URL. Only starts downloading
+ * once the thumbnail scrolls near the viewport.
  */
-export function PhotoThumbnail({
-  image,
-  accessToken,
-}: {
-  image: ScannedImage;
-  accessToken: string;
-}) {
+export function PhotoThumbnail({ image }: { image: ScannedImage }) {
   const [src, setSrc] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);
   const [visible, setVisible] = useState(false);
@@ -51,17 +45,15 @@ export function PhotoThumbnail({
     let objectUrl: string | null = null;
     let cancelled = false;
 
-    const fetchThumbnail = image.thumbnailLink
-      ? () =>
-          fetch(
-            `/api/drive/thumbnail?url=${encodeURIComponent(image.thumbnailLink!)}`,
-          ).then((res) => {
-            if (!res.ok) throw new Error(`${res.status}`);
-            return res.blob();
-          })
-      : () => getDriveFileMedia(accessToken, image.id);
+    const params = new URLSearchParams({ fileId: image.id });
+    if (image.thumbnailLink) params.set("url", image.thumbnailLink);
 
-    limitFetch(fetchThumbnail)
+    limitFetch(() =>
+      fetch(`/api/drive/thumbnail?${params.toString()}`).then((res) => {
+        if (!res.ok) throw new Error(`${res.status}`);
+        return res.blob();
+      }),
+    )
       .then((blob) => {
         if (cancelled) return;
         objectUrl = URL.createObjectURL(blob);
@@ -75,7 +67,7 @@ export function PhotoThumbnail({
       cancelled = true;
       if (objectUrl) URL.revokeObjectURL(objectUrl);
     };
-  }, [visible, image.id, image.thumbnailLink, accessToken]);
+  }, [visible, image.id, image.thumbnailLink]);
 
   return (
     <figure

@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { PhotoThumbnail } from "@/components/photo-thumbnail";
 import type { ScannedImage } from "@/lib/drive/scan";
@@ -9,10 +8,9 @@ import type { ScannedImage } from "@/lib/drive/scan";
 const PAGE_SIZE = 60;
 
 export function PhotoGrid({ images }: { images: ScannedImage[] }) {
-  const { data: session } = useSession();
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
-  if (images.length === 0 || !session?.accessToken) return null;
+  if (images.length === 0) return null;
 
   const visible = images.slice(0, visibleCount);
 
@@ -20,11 +18,7 @@ export function PhotoGrid({ images }: { images: ScannedImage[] }) {
     <div className="flex w-full max-w-5xl flex-col items-center gap-4">
       <div className="grid w-full grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
         {visible.map((image) => (
-          <PhotoThumbnail
-            key={image.id}
-            image={image}
-            accessToken={session.accessToken!}
-          />
+          <PhotoThumbnail key={image.id} image={image} />
         ))}
       </div>
       {visibleCount < images.length && (

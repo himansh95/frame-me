@@ -15,6 +15,14 @@ export function AuthButton() {
   }
 
   if (session) {
+    if (session.error === "RefreshAccessTokenError") {
+      return (
+        <Button variant="outline" onClick={() => signIn("google")}>
+          Session expired - sign in again
+        </Button>
+      );
+    }
+
     return (
       <div className="flex items-center gap-3">
         <span className="text-sm text-muted-foreground">

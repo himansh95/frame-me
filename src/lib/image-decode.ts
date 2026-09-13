@@ -8,7 +8,7 @@ function drawToCanvas(bitmap: ImageBitmap, maxDimension: number): HTMLCanvasElem
   const canvas = document.createElement("canvas");
   canvas.width = width;
   canvas.height = height;
-  canvas.getContext("2d")!.drawImage(bitmap, 0, 0, width, height);
+  canvas.getContext("2d", { willReadFrequently: true })!.drawImage(bitmap, 0, 0, width, height);
   return canvas;
 }
 

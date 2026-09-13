@@ -3,9 +3,16 @@ import type { ScannedImage } from "@/lib/drive/scan";
 import { loadFaceModels } from "./models";
 import { getCachedPhotoFaces, setCachedPhotoFaces } from "./photo-face-cache";
 
-// face-api.js's own recommended threshold for "same person" on its
-// faceRecognitionNet descriptors (Euclidean distance). Tunable.
-export const DEFAULT_MATCH_THRESHOLD = 0.6;
+// Higher resolution than the original 800px pass - small/distant faces in
+// event photos need more pixels for descriptors to be discriminative enough
+// to separate a true match from a lookalike.
+const ANALYSIS_THUMBNAIL_SIZE = 1600;
+
+// face-api.js's "0.6" is the textbook threshold for clean, well-lit,
+// high-res portraits. Real event photos (motion blur, distance, angle,
+// compressed thumbnails) need a stricter cutoff to avoid false positives.
+// Tunable - lower = stricter/fewer false positives, higher = more recall.
+export const DEFAULT_MATCH_THRESHOLD = 0.55;
 
 export interface MatchResult {
   image: ScannedImage;
@@ -27,7 +34,7 @@ function yieldToBrowser(): Promise<void> {
 
 async function decodeToAnalysisCanvas(
   blob: Blob,
-  maxDimension = 1024,
+  maxDimension = 1600,
 ): Promise<HTMLCanvasElement> {
   const bitmap = await createImageBitmap(blob);
   try {
@@ -35,11 +42,28 @@ async function decodeToAnalysisCanvas(
     const canvas = document.createElement("canvas");
     canvas.width = Math.round(bitmap.width * scale);
     canvas.height = Math.round(bitmap.height * scale);
-    canvas.getContext("2d")!.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+    canvas.getContext("2d", { willReadFrequently: true })!.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
     return canvas;
   } finally {
     bitmap.close();
   }
+}
+
+async function fetchPhotoBlob(
+  accessToken: string,
+  image: ScannedImage,
+): Promise<Blob> {
+  const params = new URLSearchParams({
+    fileId: image.id,
+    size: String(ANALYSIS_THUMBNAIL_SIZE),
+  });
+  if (image.thumbnailLink) params.set("url", image.thumbnailLink);
+
+  const res = await fetch(`/api/drive/thumbnail?${params.toString()}`);
+  if (res.ok) return res.blob();
+  // Last resort: proxy + stale-link recovery both failed, fall back to a
+  // full-resolution direct download.
+  return getDriveFileMedia(accessToken, image.id);
 }
 
 async function getPhotoFaceDescriptors(
@@ -50,13 +74,13 @@ async function getPhotoFaceDescriptors(
   if (cached) return cached;
 
   const faceapi = await import("face-api.js");
-  const blob = await getDriveFileMedia(accessToken, image.id);
+  const blob = await fetchPhotoBlob(accessToken, image);
   const canvas = await decodeToAnalysisCanvas(blob);
 
   const detections = await faceapi
     .detectAllFaces(
       canvas,
-      new faceapi.TinyFaceDetectorOptions({ inputSize: 608, scoreThreshold: 0.3 }),
+      new faceapi.TinyFaceDetectorOptions({ inputSize: 800, scoreThreshold: 0.3 }),
     )
     .withFaceLandmarks()
     .withFaceDescriptors();
@@ -84,7 +108,7 @@ export async function matchPhotosToDescriptor(
   await loadFaceModels();
   const faceapi = await import("face-api.js");
   const threshold = options.threshold ?? DEFAULT_MATCH_THRESHOLD;
-  const concurrency = options.concurrency ?? 4;
+  const concurrency = options.concurrency ?? 8;
 
   return new Promise((resolve) => {
     const results: MatchResult[] = new Array(images.length);

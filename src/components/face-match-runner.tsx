@@ -2,7 +2,7 @@
 
 import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
-import { PhotoGrid } from "@/components/photo-grid";
+import { MatchResultsGrid } from "@/components/match-results-grid";
 import { matchPhotosToDescriptor } from "@/lib/face/match";
 import { useMatchStore } from "@/stores/match-store";
 import { useScanStore } from "@/stores/scan-store";
@@ -29,12 +29,19 @@ export function FaceMatchRunner() {
         { onProgress: setProgress },
       );
       finish(found);
+
+      // Diagnostic: log the closest distances so the match threshold can be
+      // tuned from real numbers instead of guessing.
+      const closest = [...found]
+        .filter((r) => r.distance !== null)
+        .sort((a, b) => a.distance! - b.distance!)
+        .slice(0, 20)
+        .map((r) => ({ name: r.image.name, distance: r.distance!.toFixed(3), matched: r.matched }));
+      console.table(closest);
     } catch (err) {
       fail(err instanceof Error ? err.message : "Matching failed.");
     }
   }
-
-  const matchedImages = results.filter((r) => r.matched).map((r) => r.image);
 
   return (
     <div className="flex w-full flex-col items-center gap-4">
@@ -47,16 +54,10 @@ export function FaceMatchRunner() {
           {progress.matched}
         </p>
       )}
-      {status === "done" && (
-        <p className="text-sm text-muted-foreground">
-          Found {matchedImages.length} photo
-          {matchedImages.length === 1 ? "" : "s"} of you.
-        </p>
-      )}
       {status === "error" && error && (
         <p className="text-sm text-red-600">{error}</p>
       )}
-      {status === "done" && <PhotoGrid images={matchedImages} />}
+      {status === "done" && <MatchResultsGrid results={results} />}
     </div>
   );
 }
